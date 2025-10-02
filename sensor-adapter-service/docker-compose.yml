@@ -4,11 +4,13 @@ services:
   sensor-adapter:
     build: .
     ports:
-      - "8002:8002"       # HTTP API
-      - "9999:9999"       # TCP сервер
-    environment:
-      DATABASE_URL: postgresql+asyncpg://sensors_user:sensors_pass@db:5432/sensors_db
-      ENABLE_TCP_SERVER: "true"
+      - "8002:${APP_PORT}"       # HTTP API
+      - "9999:${APP_TCP_PORT}"       # TCP сервер
+    volumes:
+      - ./app:/code/app
+      - ./tests:/code/tests
+    env_file:
+      - ./.env
     depends_on:
       - db
 
