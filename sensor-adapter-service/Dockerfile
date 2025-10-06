@@ -5,8 +5,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /code
+COPY .env .
+
 ENV PYTHONPATH=/code
 
-EXPOSE 8002
+EXPOSE ${APP_PORT}
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002"]
+CMD uvicorn app.main:app --host ${APP_HOST} --port ${APP_PORT}

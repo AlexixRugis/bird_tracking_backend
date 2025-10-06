@@ -1,12 +1,14 @@
-from pydantic_settings import BaseSettings
-
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class _Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql+asyncpg://user:pass@localhost:5432/sensors_db"
+    APP_HOST: str = "0.0.0.0"
+    APP_PORT: int = 8000
+    
+    APP_TCP_PORT: int = 9999
     ENABLE_TCP_SERVER: bool = False
+    
+    DATABASE_URL: str = ""
 
-    class Config:
-        env_file = ".env"
-
+    model_config = SettingsConfigDict(env_file=".env", extra='allow')
 
 settings = _Settings()

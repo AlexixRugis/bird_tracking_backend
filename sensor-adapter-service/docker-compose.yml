@@ -16,14 +16,13 @@ services:
 
   db:
     image: postgres:15
-    environment:
-      POSTGRES_DB: sensors_db
-      POSTGRES_USER: sensors_user
-      POSTGRES_PASSWORD: sensors_pass
+    restart: always
+    env_file:
+      - ./.env
     volumes:
       - postgres_data_sensors:/var/lib/postgresql/data
     ports:
-      - "5435:5432"
+      - "5435:${POSTGRES_PORT}"
 
 volumes:
   postgres_data_sensors:
