@@ -12,9 +12,11 @@ services:
     env_file:
       - ./.env
     depends_on:
-      - db
+      - sensor_adapter_db
+    networks:
+      - shared-net
 
-  db:
+  sensor_adapter_db:
     image: postgres:15
     restart: always
     env_file:
@@ -23,6 +25,12 @@ services:
       - postgres_data_sensors:/var/lib/postgresql/data
     ports:
       - "5435:${POSTGRES_PORT}"
+    networks:
+      - shared-net
 
 volumes:
   postgres_data_sensors:
+
+networks:
+  shared-net:
+    external: true

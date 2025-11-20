@@ -1,13 +1,15 @@
 version: "3.9"
 
 services:
-  db:
+  web_db:
     image: postgres:15
     restart: always
     env_file:
       - ./.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - shared-net
     ports:
       - "5433:5432"
 
@@ -16,15 +18,21 @@ services:
       context: ..
       dockerfile: infra/Dockerfile
     depends_on:
-      - db
+      - web_db
     ports:
       - "${APP_PORT}:${APP_PORT}"
     env_file:
       - ./.env
     volumes:
       - ../backend:/app/
+    networks:
+      - shared-net
     working_dir: /app
     command: uvicorn app.main:app --host=${APP_HOST} --port=${APP_PORT} --reload
 
 volumes:
   postgres_data:
+
+networks:
+  shared-net:
+    external: true

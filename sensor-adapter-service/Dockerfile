@@ -9,6 +9,9 @@ COPY .env .
 
 ENV PYTHONPATH=/code
 
+RUN
+
 EXPOSE ${APP_PORT}
 
-CMD uvicorn app.main:app --host ${APP_HOST} --port ${APP_PORT}
+
+CMD uvicorn app.main:app --host ${APP_HOST} --port ${APP_PORT} --reload

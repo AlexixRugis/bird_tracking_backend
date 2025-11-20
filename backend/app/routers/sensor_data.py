@@ -8,6 +8,9 @@ from app.utils import calculate_avg_distance, calculate_avg_speed
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
+from app.sensor_data import fetch_sensor_data
+
+SENSOR_ADAPTER_URL = "http://sensor-adapter:8002"
 
 router = APIRouter(prefix="/sensor-data", tags=["Sensor Data"])
 
@@ -49,70 +52,59 @@ def add_sensor_data_batch(data: SensorDataBatchCreate, db: Session = Depends(get
     return {"status": "Sensor data added"}
 
 @router.get("/avg-speed/")
-def get_avg_speed(
+async def get_avg_speed(
     internal_id: str,
     date_from: datetime,
     date_to: datetime,
-    times_of_day: Optional[bool] = False,
-    db: Session = Depends(get_db)
+    times_of_day: Optional[bool] = False
 ):
-    sensor = db.query(Sensor).filter_by(internal_id=internal_id).first()
-    if not sensor:
-        raise HTTPException(status_code=404, detail="Sensor not found")
-
-    query = db.query(SensorData).filter(
-        SensorData.sensor_id == sensor.id,
-        SensorData.timestamp >= date_from,
-        SensorData.timestamp <= date_to
+    records = await fetch_sensor_data(
+        SENSOR_ADAPTER_URL,
+        internal_id,
+        date_from,
+        date_to,
+        order="asc"
     )
     
     if times_of_day:
-        query = query.filter(SensorData.is_light == True)
-
-    records = query.order_by(SensorData.timestamp).all()
+        records = list(filter(lambda x: x.light is not None and x.light > 0.8, records))
+        
     avg_speed = calculate_avg_speed(records)
     return {"average_speed_kmh": avg_speed}
 
 @router.get("/avg-distance/")
-def get_avg_distance(
+async def get_avg_distance(
     internal_id: str,
     date_from: datetime,
     date_to: datetime,
-    times_of_day: Optional[bool] = False,
-    db: Session = Depends(get_db)
-):
-    sensor = db.query(Sensor).filter_by(internal_id=internal_id).first()
-    if not sensor:
-        raise HTTPException(status_code=404, detail="Sensor not found")
-
-    query = db.query(SensorData).filter(
-        SensorData.sensor_id == sensor.id,
-        SensorData.timestamp >= date_from,
-        SensorData.timestamp <= date_to
+    times_of_day: Optional[bool] = False
+):    
+    records = await fetch_sensor_data(
+        SENSOR_ADAPTER_URL,
+        internal_id,
+        date_from,
+        date_to,
+        order="asc"
     )
+    
     if times_of_day:
-        query = query.filter(SensorData.is_light == True)
-
-    records = query.order_by(SensorData.timestamp).all()
+        records = list(filter(lambda x: x.light is not None and x.light > 0.8, records))
+        
     avg_distance = calculate_avg_distance(records)
     return {"average_distance_km": avg_distance}
 
 @router.get("/coordinates/by-sensor/", response_model=List[CoordinateResponse])
-def get_coordinates_by_sensor(
+async def get_coordinates_by_sensor(
     internal_id: str,
     date_from: datetime,
-    date_to: datetime,
-    db: Session = Depends(get_db)
+    date_to: datetime
 ):
-    sensor = db.query(Sensor).filter_by(internal_id=internal_id).first()
-    if not sensor:
-        raise HTTPException(status_code=404, detail="Sensor not found")
-
-    records = db.query(SensorData).filter(
-        SensorData.sensor_id == sensor.id,
-        SensorData.timestamp >= date_from,
-        SensorData.timestamp <= date_to
-    ).all()
+    records = await fetch_sensor_data(
+        SENSOR_ADAPTER_URL,
+        internal_id,
+        date_from,
+        date_to
+    )
 
     return [
         CoordinateResponse(
